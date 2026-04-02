@@ -2,9 +2,11 @@
 
 use wasm_pdf_data_reader::{
     APP_HEADING, App, APP_SUBHEADING, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
-    WORD_LIST_EMPTY_STATE, build_document_status, build_word_list_entries,
+    WORD_LIST_EMPTY_STATE, WordListEntry, build_document_status, build_word_list_entries,
+    components::word_sidebar::WordSidebar,
     models::pdf_text_item::PdfTextItem,
 };
+use leptos::prelude::*;
 
 fn mock_pdf_text_item(page: u32, text: &str, left: f64) -> PdfTextItem {
     PdfTextItem {
@@ -98,4 +100,56 @@ fn givenNoLoadedPdf_whenBuildingDocumentStatus_shouldReturnTheEmptyState_thenThe
     // Then
     assert_eq!(status, "No PDF loaded");
     assert!(WORD_LIST_EMPTY_STATE.contains("Detected PDF words"));
+}
+
+#[test]
+fn givenEmptyWordSidebarSignals_whenConstructed_shouldSupportTheEmptyState_thenComponentInstantiationSucceeds()
+{
+    // Given
+    let total_items_text = Signal::derive(|| "0 items".to_string());
+    let (entries, _) = signal(Vec::<WordListEntry>::new());
+
+    // When
+    let _component = view! {
+        <WordSidebar
+            title="Detected Words"
+            empty_message=WORD_LIST_EMPTY_STATE
+            total_items_text
+            entries
+        />
+    };
+
+    // Then
+}
+
+#[test]
+fn givenPopulatedWordSidebarSignals_whenConstructed_shouldSupportWordRows_thenComponentInstantiationSucceeds()
+{
+    // Given
+    let total_items_text = Signal::derive(|| "2 items".to_string());
+    let populated_entries = vec![
+        WordListEntry {
+            id: "page-1-word-0".to_string(),
+            page: 1,
+            word: "Finanzas".to_string(),
+        },
+        WordListEntry {
+            id: "page-1-word-1".to_string(),
+            page: 1,
+            word: "Marketing".to_string(),
+        },
+    ];
+    let (entries, _) = signal(populated_entries);
+
+    // When
+    let _component = view! {
+        <WordSidebar
+            title="Detected Words"
+            empty_message=WORD_LIST_EMPTY_STATE
+            total_items_text
+            entries
+        />
+    };
+
+    // Then
 }

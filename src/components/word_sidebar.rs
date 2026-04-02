@@ -1,5 +1,7 @@
 use leptos::prelude::*;
 
+use crate::components::word_sidebar_empty::WordSidebarEmpty;
+use crate::components::word_sidebar_table::WordSidebarTable;
 use crate::WordListEntry;
 
 #[component]
@@ -20,33 +22,11 @@ pub fn WordSidebar(
                 when=move || !entries.get().is_empty()
                 fallback=move || {
                     view! {
-                        <div class="word-sidebar__empty">
-                            <p>{empty_message}</p>
-                        </div>
+                        <WordSidebarEmpty empty_message />
                     }
                 }
             >
-                <div class="word-table">
-                    <div class="word-table__head">
-                        <span>"Page"</span>
-                        <span>"Word"</span>
-                    </div>
-
-                    <ul class="word-list">
-                        <For
-                            each=move || entries.get()
-                            key=|entry| entry.id.clone()
-                            children=move |entry| {
-                                view! {
-                                    <li class="word-row">
-                                        <span class="word-page">{format!("P{}", entry.page)}</span>
-                                        <span class="word-copy">{entry.word}</span>
-                                    </li>
-                                }
-                            }
-                        />
-                    </ul>
-                </div>
+                <WordSidebarTable entries />
             </Show>
         </aside>
     }
