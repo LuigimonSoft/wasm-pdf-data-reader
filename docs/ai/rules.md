@@ -25,6 +25,12 @@ These rules are written for Codex and must be treated as repository-specific ope
 - At the end of each modification, verify the unit tests and integration tests.
 - If tests fail, correct them or create new tests as needed.
 - Maintain test coverage at a minimum of 80%.
+- Coverage must be checked with `cargo llvm-cov --all-features --workspace --cobertura --output-path coverage/cobertura.xml`.
+- The total coverage must be read from `coverage/cobertura.xml`.
+- If total coverage is below 80%, more tests must be created to cover the missing behavior until the minimum threshold is restored.
+- Test method names must follow the format `given{scenario}_when{condition}_should{expectedbehavior}_then{expectedresult}`.
+- Tests must include separator comments labeled `Given`, `When`, and `Then` to make the intent and flow explicit.
+- Tests should use mocks to avoid relying on real positions or real coordinate sources.
 - Do not leave feature work without automated validation for the affected behavior.
 - Add tests for parsing, mapping, and rendering logic when the feature surface expands.
 

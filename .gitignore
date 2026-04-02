@@ -24,3 +24,6 @@ dist
 # MacOs files
 .DS_Store
 ._*
+
+# Coverage files
+coverage
