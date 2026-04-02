@@ -1,14 +1,48 @@
 <!DOCTYPE html>
-  <html lang="es">
+  <html lang="en">
 
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Leptos basic template CSR</title>
-    <link data-trunk rel="rust" data-bin="leptos-basic-template" />
+    <title>WASM PDF Data Reader</title>
+    <script>
+      const applySystemTheme = () => {
+        const root = document.documentElement;
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.classList.toggle("dark", prefersDark);
+      };
+
+      applySystemTheme();
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", applySystemTheme);
+    </script>
+    <script>
+      tailwind = {
+        config: {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                vuexy: {
+                  50: "#eef2ff",
+                  100: "#e0e7ff",
+                  500: "#7367f0",
+                  600: "#5d50ec",
+                  700: "#4639d7"
+                }
+              }
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link data-trunk rel="css" href="src/styles/app.css" />
+    <link data-trunk rel="rust" data-bin="wasm-pdf-data-reader" />
   </head>
 
-  <body>
+  <body class="min-h-screen antialiased">
   </body>
 
 </html>
