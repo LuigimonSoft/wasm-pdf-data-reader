@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use wasm_pdf_data_reader::{
-    APP_HEADING, App, APP_SUBHEADING, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
+    APP_HEADING, APP_SUBHEADING, App, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
     WORD_LIST_EMPTY_STATE, build_document_status, build_word_list_entries,
     models::pdf_text_item::PdfTextItem,
 };
@@ -20,7 +20,7 @@ fn mock_pdf_text_item(page: u32, text: &str, left: f64) -> PdfTextItem {
 
 #[test]
 fn givenPublicApplicationComponent_whenConstructed_shouldExposeTheMainView_thenAppInstantiationSucceeds()
-{
+ {
     // Given
     let component_factory = App;
 
@@ -32,7 +32,7 @@ fn givenPublicApplicationComponent_whenConstructed_shouldExposeTheMainView_thenA
 
 #[test]
 fn givenPublicCopyConstants_whenRead_shouldDescribeThePdfWorkspace_thenValuesMatchTheExpectedContract()
-{
+ {
     // Given
     let expected_heading = "WASM PDF Data Reader";
     let expected_toolbar_label = "Open PDF";
@@ -52,7 +52,7 @@ fn givenPublicCopyConstants_whenRead_shouldDescribeThePdfWorkspace_thenValuesMat
 
 #[test]
 fn givenMockPdfTextItems_whenBuildingWordListEntries_shouldFilterBlankWords_thenOnlyVisibleWordsRemain()
-{
+ {
     // Given
     let mock_items = vec![
         mock_pdf_text_item(1, "Invoice", 12.0),
@@ -73,7 +73,7 @@ fn givenMockPdfTextItems_whenBuildingWordListEntries_shouldFilterBlankWords_then
 
 #[test]
 fn givenDocumentMetadata_whenBuildingDocumentStatus_shouldDescribeTheLoadedPdf_thenTheSummaryIncludesFilePagesAndWords()
-{
+ {
     // Given
     let file_name = Some("sample.pdf");
     let total_pages = 3;
@@ -88,7 +88,7 @@ fn givenDocumentMetadata_whenBuildingDocumentStatus_shouldDescribeTheLoadedPdf_t
 
 #[test]
 fn givenNoLoadedPdf_whenBuildingDocumentStatus_shouldReturnTheEmptyState_thenTheUserSeesTheExpectedMessage()
-{
+ {
     // Given
     let file_name = None;
 

@@ -7,7 +7,7 @@ pub fn WordSidebar(
     title: &'static str,
     empty_message: &'static str,
     total_items_text: Signal<String>,
-    entries: ReadSignal<Vec<WordListEntry>>,
+    entries: Signal<Vec<WordListEntry>>,
 ) -> impl IntoView {
     view! {
         <aside class="word-sidebar">

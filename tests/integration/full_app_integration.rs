@@ -6,7 +6,7 @@ use wasm_pdf_data_reader::{
 
 #[test]
 fn givenPublicApplicationContract_whenLoadingTheCrate_shouldDescribeThePdfReaderWorkspace_thenTheCoreContractRemainsConsistent()
-{
+ {
     // Given
 
     // When
@@ -25,7 +25,7 @@ fn givenPublicApplicationContract_whenLoadingTheCrate_shouldDescribeThePdfReader
 
 #[test]
 fn givenNativeBinaryBuild_whenExecutingTheApplication_shouldPrintTheBrowserOnlyMessage_thenTheCliContractRemainsConsistent()
-{
+ {
     // Given
     let binary_path = env!("CARGO_BIN_EXE_wasm-pdf-data-reader");
 

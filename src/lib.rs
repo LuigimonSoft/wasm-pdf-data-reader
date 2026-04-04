@@ -15,7 +15,8 @@ use crate::models::pdf_text_item::PdfTextItem;
 
 pub const APP_HEADING: &str = "WASM PDF Data Reader";
 pub const APP_SUBHEADING: &str = "Render PDFs with pdf.js and inspect every detected word.";
-pub const BROWSER_ONLY_MESSAGE: &str = "This application only renders PDFs when compiled to WebAssembly.";
+pub const BROWSER_ONLY_MESSAGE: &str =
+    "This application only renders PDFs when compiled to WebAssembly.";
 pub const TOOLBAR_OPEN_FILE_LABEL: &str = "Open PDF";
 pub const PDF_VIEWER_EMPTY_STATE: &str = "Open a PDF to render it in the main viewer.";
 pub const WORD_LIST_EMPTY_STATE: &str = "Detected PDF words will appear in this panel.";
@@ -29,7 +30,8 @@ pub struct WordListEntry {
 }
 
 pub fn build_word_list_entries(items: &[PdfTextItem]) -> Vec<WordListEntry> {
-    items.iter()
+    items
+        .iter()
         .enumerate()
         .filter_map(|(index, item)| {
             let word = item.text.trim();

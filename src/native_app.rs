@@ -12,6 +12,7 @@ use crate::{
 pub fn AppShell() -> impl IntoView {
     let (is_dark_theme, set_is_dark_theme) = signal(false);
     let (word_entries, _) = signal(Vec::<WordListEntry>::new());
+    let word_entries_signal = Signal::derive(move || word_entries.get());
 
     let toggle_theme = move |_| {
         set_is_dark_theme.update(|is_dark| *is_dark = !*is_dark);
@@ -56,7 +57,7 @@ pub fn AppShell() -> impl IntoView {
                         title=WORD_LIST_TITLE
                         empty_message=WORD_LIST_EMPTY_STATE
                         total_items_text=word_items_text
-                        entries=word_entries
+                        entries=word_entries_signal
                     />
                 </div>
             </div>

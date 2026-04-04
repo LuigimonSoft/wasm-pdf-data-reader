@@ -28,7 +28,12 @@ fn get_html_host_by_id(id: &str) -> Option<web_sys::HtmlElement> {
 
 fn is_dark_theme_preferred() -> bool {
     web_sys::window()
-        .and_then(|window| window.match_media("(prefers-color-scheme: dark)").ok().flatten())
+        .and_then(|window| {
+            window
+                .match_media("(prefers-color-scheme: dark)")
+                .ok()
+                .flatten()
+        })
         .map(|media| media.matches())
         .unwrap_or(false)
 }
@@ -37,7 +42,8 @@ fn is_dark_theme_preferred() -> bool {
 pub fn AppShell() -> impl IntoView {
     let (file_name, set_file_name) = signal::<Option<String>>(None);
     let (total_pages, set_total_pages) = signal(0_u32);
-    let (word_entries, set_word_entries) = signal(Vec::new());
+    let (pdf_items, set_pdf_items) = signal(Vec::new());
+    let word_entries = Signal::derive(move || build_word_list_entries(&pdf_items.get()));
     let (is_loading, set_is_loading) = signal(false);
     let (error_message, set_error_message) = signal::<Option<String>>(None);
     let (is_dark_theme, set_is_dark_theme) = signal(is_dark_theme_preferred());
@@ -91,7 +97,9 @@ pub fn AppShell() -> impl IntoView {
         };
 
         let Some(viewer_host) = get_html_host_by_id("pdf-viewer-host") else {
-            set_error_message.set(Some("The PDF viewer container is not available.".to_string()));
+            set_error_message.set(Some(
+                "The PDF viewer container is not available.".to_string(),
+            ));
             return;
         };
 
@@ -101,15 +109,13 @@ pub fn AppShell() -> impl IntoView {
         set_error_message.set(None);
         set_file_name.set(Some(selected_file_name.clone()));
         set_total_pages.set(0);
-        set_word_entries.set(Vec::new());
+        set_pdf_items.set(Vec::new());
 
         spawn_local(async move {
             match process_pdf(file, viewer_host).await {
                 Ok(result) => {
-                    let entries = build_word_list_entries(&result.items);
-
                     set_total_pages.set(result.total_pages);
-                    set_word_entries.set(entries);
+                    set_pdf_items.set(result.items);
                 }
                 Err(error) => {
                     let message = error
@@ -118,7 +124,7 @@ pub fn AppShell() -> impl IntoView {
 
                     set_error_message.set(Some(message));
                     set_total_pages.set(0);
-                    set_word_entries.set(Vec::new());
+                    set_pdf_items.set(Vec::new());
                 }
             }
 
