@@ -1,12 +1,13 @@
 #![allow(non_snake_case)]
 
+use leptos::prelude::*;
 use wasm_pdf_data_reader::{
-    APP_HEADING, App, APP_SUBHEADING, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
+    APP_HEADING, APP_SUBHEADING, App, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
     WORD_LIST_EMPTY_STATE, WordListEntry, build_document_status, build_word_list_entries,
-    components::word_sidebar::WordSidebar,
+    components::word_sidebar::WordSidebar, components::word_sidebar_empty::WordSidebarEmpty,
+    components::word_sidebar_table::WordSidebarTable,
     models::pdf_text_item::PdfTextItem,
 };
-use leptos::prelude::*;
 
 fn mock_pdf_text_item(page: u32, text: &str, left: f64) -> PdfTextItem {
     PdfTextItem {
@@ -22,7 +23,7 @@ fn mock_pdf_text_item(page: u32, text: &str, left: f64) -> PdfTextItem {
 
 #[test]
 fn givenPublicApplicationComponent_whenConstructed_shouldExposeTheMainView_thenAppInstantiationSucceeds()
-{
+ {
     // Given
     let component_factory = App;
 
@@ -34,7 +35,7 @@ fn givenPublicApplicationComponent_whenConstructed_shouldExposeTheMainView_thenA
 
 #[test]
 fn givenPublicCopyConstants_whenRead_shouldDescribeThePdfWorkspace_thenValuesMatchTheExpectedContract()
-{
+ {
     // Given
     let expected_heading = "WASM PDF Data Reader";
     let expected_toolbar_label = "Open PDF";
@@ -54,7 +55,7 @@ fn givenPublicCopyConstants_whenRead_shouldDescribeThePdfWorkspace_thenValuesMat
 
 #[test]
 fn givenMockPdfTextItems_whenBuildingWordListEntries_shouldFilterBlankWords_thenOnlyVisibleWordsRemain()
-{
+ {
     // Given
     let mock_items = vec![
         mock_pdf_text_item(1, "Invoice", 12.0),
@@ -74,8 +75,29 @@ fn givenMockPdfTextItems_whenBuildingWordListEntries_shouldFilterBlankWords_then
 }
 
 #[test]
+fn givenTrimmedPdfTextItems_whenBuildingWordListEntries_shouldPreserveSequentialIds_thenTheSidebarCanCompareStableWords()
+ {
+    // Given
+    let mock_items = vec![
+        mock_pdf_text_item(1, "  Alpha  ", 12.0),
+        mock_pdf_text_item(1, "\n", 24.0),
+        mock_pdf_text_item(3, "Beta", 36.0),
+    ];
+
+    // When
+    let entries = build_word_list_entries(&mock_items);
+
+    // Then
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0].id, "page-1-word-0");
+    assert_eq!(entries[0].word, "Alpha");
+    assert_eq!(entries[1].id, "page-3-word-2");
+    assert_eq!(entries[1].word, "Beta");
+}
+
+#[test]
 fn givenDocumentMetadata_whenBuildingDocumentStatus_shouldDescribeTheLoadedPdf_thenTheSummaryIncludesFilePagesAndWords()
-{
+ {
     // Given
     let file_name = Some("sample.pdf");
     let total_pages = 3;
@@ -89,8 +111,21 @@ fn givenDocumentMetadata_whenBuildingDocumentStatus_shouldDescribeTheLoadedPdf_t
 }
 
 #[test]
+fn givenSelectedPdfWithoutExtractedPages_whenBuildingDocumentStatus_shouldDescribeLoadingState_thenTheUserSeesProgressFeedback()
+ {
+    // Given
+    let file_name = Some("sample.pdf");
+
+    // When
+    let status = build_document_status(file_name, 0, 0);
+
+    // Then
+    assert_eq!(status, "sample.pdf · loading document");
+}
+
+#[test]
 fn givenNoLoadedPdf_whenBuildingDocumentStatus_shouldReturnTheEmptyState_thenTheUserSeesTheExpectedMessage()
-{
+ {
     // Given
     let file_name = None;
 
@@ -103,8 +138,33 @@ fn givenNoLoadedPdf_whenBuildingDocumentStatus_shouldReturnTheEmptyState_thenThe
 }
 
 #[test]
+fn givenBlankPdfName_whenBuildingDocumentStatus_shouldReturnTheEmptyState_thenWhitespaceNamesAreIgnored()
+ {
+    // Given
+    let file_name = Some("   ");
+
+    // When
+    let status = build_document_status(file_name, 2, 14);
+
+    // Then
+    assert_eq!(status, "No PDF loaded");
+}
+
+#[test]
+fn givenWordSidebarEmptyMessage_whenConstructed_shouldSupportEmptyPlaceholder_thenComponentInstantiationSucceeds()
+ {
+    // Given
+    let empty_message = WORD_LIST_EMPTY_STATE;
+
+    // When
+    let _component = view! { <WordSidebarEmpty empty_message /> };
+
+    // Then
+}
+
+#[test]
 fn givenEmptyWordSidebarSignals_whenConstructed_shouldSupportTheEmptyState_thenComponentInstantiationSucceeds()
-{
+ {
     // Given
     let total_items_text = Signal::derive(|| "0 items".to_string());
     let (entries, _) = signal(Vec::<WordListEntry>::new());
@@ -124,7 +184,7 @@ fn givenEmptyWordSidebarSignals_whenConstructed_shouldSupportTheEmptyState_thenC
 
 #[test]
 fn givenPopulatedWordSidebarSignals_whenConstructed_shouldSupportWordRows_thenComponentInstantiationSucceeds()
-{
+ {
     // Given
     let total_items_text = Signal::derive(|| "2 items".to_string());
     let populated_entries = vec![
@@ -150,6 +210,30 @@ fn givenPopulatedWordSidebarSignals_whenConstructed_shouldSupportWordRows_thenCo
             entries
         />
     };
+
+    // Then
+}
+
+#[test]
+fn givenPopulatedWordSidebarTableEntries_whenConstructed_shouldSupportRenderingTheWordRows_thenComponentInstantiationSucceeds()
+ {
+    // Given
+    let populated_entries = vec![
+        WordListEntry {
+            id: "page-2-word-0".to_string(),
+            page: 2,
+            word: "Contrato".to_string(),
+        },
+        WordListEntry {
+            id: "page-2-word-1".to_string(),
+            page: 2,
+            word: "Firmado".to_string(),
+        },
+    ];
+    let (entries, _) = signal(populated_entries);
+
+    // When
+    let _component = view! { <WordSidebarTable entries /> };
 
     // Then
 }

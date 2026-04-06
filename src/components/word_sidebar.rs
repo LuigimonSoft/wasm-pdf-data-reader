@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 
+use crate::WordListEntry;
 use crate::components::word_sidebar_empty::WordSidebarEmpty;
 use crate::components::word_sidebar_table::WordSidebarTable;
-use crate::WordListEntry;
 
 #[component]
 pub fn WordSidebar(

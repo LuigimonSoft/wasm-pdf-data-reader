@@ -25,6 +25,7 @@ version = "0.3"
 features = [
   "File",
   "FileList",
+  "console",
   "Document",
   "Element",
   "HtmlCanvasElement",

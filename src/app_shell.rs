@@ -1,17 +1,24 @@
 use leptos::ev;
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::spawn_local;
 
 use crate::components::app_header::AppHeader;
 use crate::components::pdf_workspace::PdfWorkspace;
 use crate::components::word_sidebar::WordSidebar;
-use crate::services::pdf_service::process_pdf;
 use crate::{
     APP_HEADING, APP_SUBHEADING, PDF_VIEWER_EMPTY_STATE, TOOLBAR_OPEN_FILE_LABEL,
-    WORD_LIST_EMPTY_STATE, WORD_LIST_TITLE, build_document_status, build_word_list_entries,
+    WORD_LIST_EMPTY_STATE, WORD_LIST_TITLE, WordListEntry,
 };
 
+#[cfg(target_arch = "wasm32")]
+use crate::services::pdf_service::process_pdf;
+#[cfg(target_arch = "wasm32")]
+use crate::{build_document_status, build_word_list_entries};
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_futures::spawn_local;
+
+#[cfg(target_arch = "wasm32")]
 fn get_html_input_by_id(id: &str) -> Option<web_sys::HtmlInputElement> {
     let document = web_sys::window()?.document()?;
     let element = document.get_element_by_id(id)?;
@@ -19,6 +26,7 @@ fn get_html_input_by_id(id: &str) -> Option<web_sys::HtmlInputElement> {
     element.dyn_into::<web_sys::HtmlInputElement>().ok()
 }
 
+#[cfg(target_arch = "wasm32")]
 fn get_html_host_by_id(id: &str) -> Option<web_sys::HtmlElement> {
     let document = web_sys::window()?.document()?;
     let element = document.get_element_by_id(id)?;
@@ -26,19 +34,35 @@ fn get_html_host_by_id(id: &str) -> Option<web_sys::HtmlElement> {
     element.dyn_into::<web_sys::HtmlElement>().ok()
 }
 
+#[cfg(target_arch = "wasm32")]
 fn is_dark_theme_preferred() -> bool {
     web_sys::window()
-        .and_then(|window| window.match_media("(prefers-color-scheme: dark)").ok().flatten())
+        .and_then(|window| {
+            window
+                .match_media("(prefers-color-scheme: dark)")
+                .ok()
+                .flatten()
+        })
         .map(|media| media.matches())
         .unwrap_or(false)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn is_dark_theme_preferred() -> bool {
+    false
+}
+
 #[component]
 pub fn AppShell() -> impl IntoView {
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (file_name, set_file_name) = signal::<Option<String>>(None);
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (total_pages, set_total_pages) = signal(0_u32);
-    let (word_entries, set_word_entries) = signal(Vec::new());
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
+    let (word_entries, set_word_entries) = signal(Vec::<WordListEntry>::new());
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (is_loading, set_is_loading) = signal(false);
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (error_message, set_error_message) = signal::<Option<String>>(None);
     let (is_dark_theme, set_is_dark_theme) = signal(is_dark_theme_preferred());
 
@@ -46,12 +70,18 @@ pub fn AppShell() -> impl IntoView {
         set_is_dark_theme.update(|is_dark| *is_dark = !*is_dark);
     };
 
+    #[cfg(target_arch = "wasm32")]
     let status_text = Signal::derive(move || {
         build_document_status(
             file_name.get().as_deref(),
             total_pages.get(),
             word_entries.get().len(),
         )
+    });
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let status_text = Signal::derive(|| {
+        "Native preview mode. PDF rendering is enabled in WebAssembly builds.".to_string()
     });
 
     let open_button_text = Signal::derive(move || {
@@ -73,12 +103,17 @@ pub fn AppShell() -> impl IntoView {
     let open_disabled = Signal::derive(move || is_loading.get());
     let word_items_text = Signal::derive(move || format!("{} items", word_entries.get().len()));
 
+    #[cfg(target_arch = "wasm32")]
     let open_file_picker = move |_| {
         if let Some(input) = get_html_input_by_id("pdf-file-input") {
             input.click();
         }
     };
 
+    #[cfg(not(target_arch = "wasm32"))]
+    let open_file_picker = move |_| {};
+
+    #[cfg(target_arch = "wasm32")]
     let load_pdf_file = move |event: ev::Event| {
         let input = event_target::<web_sys::HtmlInputElement>(&event);
         let files = input.files();
@@ -91,7 +126,9 @@ pub fn AppShell() -> impl IntoView {
         };
 
         let Some(viewer_host) = get_html_host_by_id("pdf-viewer-host") else {
-            set_error_message.set(Some("The PDF viewer container is not available.".to_string()));
+            set_error_message.set(Some(
+                "The PDF viewer container is not available.".to_string(),
+            ));
             return;
         };
 
@@ -99,7 +136,7 @@ pub fn AppShell() -> impl IntoView {
 
         set_is_loading.set(true);
         set_error_message.set(None);
-        set_file_name.set(Some(selected_file_name.clone()));
+        set_file_name.set(Some(selected_file_name));
         set_total_pages.set(0);
         set_word_entries.set(Vec::new());
 
@@ -125,6 +162,15 @@ pub fn AppShell() -> impl IntoView {
             set_is_loading.set(false);
         });
     };
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let load_pdf_file = move |_event: ev::Event| {};
+
+    #[cfg(target_arch = "wasm32")]
+    let show_empty_state = Signal::derive(move || file_name.get().is_none());
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let show_empty_state = Signal::derive(|| true);
 
     view! {
         <div class="app-shell" class=("dark", move || is_dark_theme.get())>
@@ -152,7 +198,7 @@ pub fn AppShell() -> impl IntoView {
                     <PdfWorkspace
                         title="PDF Viewer"
                         empty_message=PDF_VIEWER_EMPTY_STATE
-                        show_empty_state=Signal::derive(move || file_name.get().is_none())
+                        show_empty_state
                     >
                         <div id="pdf-viewer-host" class="pdf-viewer-host"></div>
 
