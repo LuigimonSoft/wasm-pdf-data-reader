@@ -116,6 +116,7 @@ function splitTextItemIntoWords(item, pageNumber, viewport) {
     extractedWords.push({
       page: pageNumber,
       text: word,
+      selected: true,
       left,
       top,
       width,
@@ -199,6 +200,7 @@ export async function load_pdf_and_extract(bytes, host) {
   }
 
   const allItems = [];
+  const pages = [];
   const scale = 1.5;
   const verbosityLevel = pdfjsLib.VerbosityLevel;
 
@@ -219,9 +221,22 @@ export async function load_pdf_and_extract(bytes, host) {
     canvas.className = "pdf-page-canvas";
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
+    canvas.style.width = `${Math.ceil(viewport.width)}px`;
+    canvas.style.height = `${Math.ceil(viewport.height)}px`;
 
-    pageShell.append(pageMeta, canvas);
+    const pageBody = document.createElement("div");
+    pageBody.className = "pdf-page-body";
+    pageBody.style.width = `${Math.ceil(viewport.width)}px`;
+    pageBody.style.height = `${Math.ceil(viewport.height)}px`;
+
+    pageBody.append(canvas);
+    pageShell.append(pageMeta, pageBody);
     host.append(pageShell);
+    pages.push({
+      page: pageNumber,
+      width: Math.ceil(viewport.width),
+      height: Math.ceil(viewport.height),
+    });
 
     const ctx = canvas.getContext("2d");
 
@@ -269,6 +284,7 @@ export async function load_pdf_and_extract(bytes, host) {
 
   return {
     total_pages: pdf.numPages,
+    pages,
     items: allItems,
   };
 }

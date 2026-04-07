@@ -4,21 +4,120 @@ use leptos::prelude::*;
 use wasm_pdf_data_reader::{
     APP_HEADING, APP_SUBHEADING, App, BROWSER_ONLY_MESSAGE, TOOLBAR_OPEN_FILE_LABEL,
     WORD_LIST_EMPTY_STATE, WordListEntry, build_document_status, build_word_list_entries,
-    components::word_sidebar::WordSidebar, components::word_sidebar_empty::WordSidebarEmpty,
+    components::app_header::AppHeader,
+    components::pdf_word_overlay::{
+        PdfWordOverlay, pdf_page_body_style, px, word_box_style, word_boxes_for_page,
+    },
+    components::pdf_workspace::PdfWorkspace,
+    components::word_sidebar::WordSidebar,
+    components::word_sidebar_empty::WordSidebarEmpty,
     components::word_sidebar_table::WordSidebarTable,
+    models::pdf_page_viewport::PdfPageViewport,
     models::pdf_text_item::PdfTextItem,
+    toggle_pdf_text_item_selection,
 };
 
 fn mock_pdf_text_item(page: u32, text: &str, left: f64) -> PdfTextItem {
     PdfTextItem {
         page,
         text: text.to_string(),
+        selected: true,
         left,
         top: 24.0,
         width: 48.0,
         height: 12.0,
         transform: vec![1.0, 0.0, 0.0, 1.0, left, 24.0],
     }
+}
+
+#[test]
+fn givenSelectedPdfTextItems_whenTogglingAWordByIndex_shouldUpdateOnlyThatWord_thenTheOverlayStateIsPreserved()
+ {
+    // Given
+    let mut mock_items = vec![
+        mock_pdf_text_item(1, "Invoice", 12.0),
+        mock_pdf_text_item(1, "Total", 32.0),
+    ];
+
+    // When
+    toggle_pdf_text_item_selection(&mut mock_items, 1);
+
+    // Then
+    assert!(mock_items[0].selected);
+    assert!(!mock_items[1].selected);
+}
+
+#[test]
+fn givenDeselectedPdfTextItem_whenTogglingTheSameWordAgain_shouldSelectItAgain_thenTheOverlayCanRestoreTheRedBorder()
+ {
+    // Given
+    let mut mock_items = vec![mock_pdf_text_item(1, "Invoice", 12.0)];
+    toggle_pdf_text_item_selection(&mut mock_items, 0);
+
+    // When
+    toggle_pdf_text_item_selection(&mut mock_items, 0);
+
+    // Then
+    assert!(mock_items[0].selected);
+}
+
+#[test]
+fn givenSelectedPdfTextItems_whenTogglingAnUnknownIndex_shouldLeaveWordsUnchanged_thenTheOverlayStateRemainsStable()
+ {
+    // Given
+    let mut mock_items = vec![mock_pdf_text_item(1, "Invoice", 12.0)];
+
+    // When
+    toggle_pdf_text_item_selection(&mut mock_items, 9);
+
+    // Then
+    assert!(mock_items[0].selected);
+}
+
+#[test]
+fn givenPdfTextItemGeometry_whenBuildingOverlayStyles_shouldUsePixelCoordinates_thenTheBoxMatchesTheExtractedWordBounds()
+ {
+    // Given
+    let mock_item = mock_pdf_text_item(2, "Total", 36.5);
+
+    // When
+    let pixel_value = px(36.5);
+    let page_style = pdf_page_body_style(612.0, 792.0);
+    let box_style = word_box_style(&mock_item);
+
+    // Then
+    assert_eq!(pixel_value, "36.5px");
+    assert_eq!(page_style, "width: 612px; height: 792px;");
+    assert_eq!(
+        box_style,
+        "left: 36.5px; top: 24px; width: 48px; height: 12px;"
+    );
+}
+
+#[test]
+fn givenMixedPdfTextItems_whenBuildingWordBoxesForPage_shouldKeepSelectedAndDeselectedWordsOnThatPage_thenTheOverlayCanToggleThem()
+ {
+    // Given
+    let mut deselected_item = mock_pdf_text_item(1, "Hidden", 42.0);
+    deselected_item.selected = false;
+    let mock_items = vec![
+        mock_pdf_text_item(1, "Visible", 12.0),
+        deselected_item,
+        mock_pdf_text_item(2, "OtherPage", 72.0),
+    ];
+
+    // When
+    let boxes = word_boxes_for_page(&mock_items, 1);
+
+    // Then
+    assert_eq!(boxes.len(), 2);
+    assert_eq!(boxes[0].index, 0);
+    assert_eq!(boxes[0].text, "Visible");
+    assert!(boxes[0].selected);
+    assert!(boxes[0].style.contains("left: 12px;"));
+    assert_eq!(boxes[1].index, 1);
+    assert_eq!(boxes[1].text, "Hidden");
+    assert!(!boxes[1].selected);
 }
 
 #[test]
@@ -51,6 +150,52 @@ fn givenPublicCopyConstants_whenRead_shouldDescribeThePdfWorkspace_thenValuesMat
     assert_eq!(toolbar_label, expected_toolbar_label);
     assert!(subheading.contains("pdf.js"));
     assert!(browser_message.contains("WebAssembly"));
+}
+
+#[test]
+fn givenHeaderSignals_whenConstructingTheAppHeader_shouldSupportToolbarRendering_thenComponentInstantiationSucceeds()
+ {
+    // Given
+    let status_text = Signal::derive(|| "sample.pdf · 1 pages · 2 words".to_string());
+    let open_button_text = Signal::derive(|| TOOLBAR_OPEN_FILE_LABEL.to_string());
+    let theme_button_text = Signal::derive(|| "Dark theme".to_string());
+    let open_disabled = Signal::derive(|| false);
+    let on_open_click = Callback::new(|_event| {});
+    let on_theme_click = Callback::new(|_event| {});
+
+    // When
+    let _component = view! {
+        <AppHeader
+            title=APP_HEADING
+            subtitle=APP_SUBHEADING
+            status_text
+            open_button_text
+            theme_button_text
+            open_disabled
+            on_open_click
+            on_theme_click
+        />
+    };
+
+    // Then
+}
+
+#[test]
+fn givenWorkspaceSignals_whenConstructingThePdfWorkspace_shouldSupportViewerRendering_thenComponentInstantiationSucceeds()
+ {
+    // Given
+    let show_empty_state = Signal::derive(|| true);
+
+    // When
+    let _component = view! {
+        <PdfWorkspace
+            title="PDF Viewer"
+            empty_message="Open a PDF"
+            show_empty_state
+        />
+    };
+
+    // Then
 }
 
 #[test]
@@ -234,6 +379,28 @@ fn givenPopulatedWordSidebarTableEntries_whenConstructed_shouldSupportRenderingT
 
     // When
     let _component = view! { <WordSidebarTable entries /> };
+
+    // Then
+}
+
+#[test]
+fn givenPdfPagesAndSelectedTextItems_whenConstructingTheWordOverlay_shouldSupportClickableWordBoxes_thenComponentInstantiationSucceeds()
+ {
+    // Given
+    let mock_pages = vec![PdfPageViewport {
+        page: 1,
+        width: 612.0,
+        height: 792.0,
+    }];
+    let mock_items = vec![mock_pdf_text_item(1, "Contrato", 48.0)];
+    let (pages, _) = signal(mock_pages);
+    let (items, _) = signal(mock_items);
+    let on_word_click = Callback::new(|_index: usize| {});
+
+    // When
+    let _component = view! {
+        <PdfWordOverlay pages items on_word_click />
+    };
 
     // Then
 }

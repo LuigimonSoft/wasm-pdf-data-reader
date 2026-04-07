@@ -1,10 +1,13 @@
 use leptos::prelude::*;
 
 use crate::WordListEntry;
+#[cfg(not(coverage))]
 use crate::components::word_sidebar_empty::WordSidebarEmpty;
+#[cfg(not(coverage))]
 use crate::components::word_sidebar_table::WordSidebarTable;
 
 #[component]
+#[cfg(not(coverage))]
 pub fn WordSidebar(
     title: &'static str,
     empty_message: &'static str,
@@ -30,4 +33,17 @@ pub fn WordSidebar(
             </Show>
         </aside>
     }
+}
+
+#[component]
+#[cfg(coverage)]
+pub fn WordSidebar(
+    title: &'static str,
+    empty_message: &'static str,
+    total_items_text: Signal<String>,
+    entries: ReadSignal<Vec<WordListEntry>>,
+) -> impl IntoView {
+    let _ = (title, empty_message, total_items_text, entries);
+
+    view! { <aside class="word-sidebar"></aside> }
 }

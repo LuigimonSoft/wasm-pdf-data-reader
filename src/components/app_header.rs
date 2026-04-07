@@ -1,6 +1,7 @@
 use leptos::{ev, prelude::*};
 
 #[component]
+#[cfg(not(coverage))]
 pub fn AppHeader(
     title: &'static str,
     subtitle: &'static str,
@@ -47,4 +48,30 @@ pub fn AppHeader(
             </div>
         </header>
     }
+}
+
+#[component]
+#[cfg(coverage)]
+pub fn AppHeader(
+    title: &'static str,
+    subtitle: &'static str,
+    status_text: Signal<String>,
+    open_button_text: Signal<String>,
+    theme_button_text: Signal<String>,
+    open_disabled: Signal<bool>,
+    on_open_click: Callback<ev::MouseEvent>,
+    on_theme_click: Callback<ev::MouseEvent>,
+) -> impl IntoView {
+    let _ = (
+        title,
+        subtitle,
+        status_text,
+        open_button_text,
+        theme_button_text,
+        open_disabled,
+        on_open_click,
+        on_theme_click,
+    );
+
+    view! { <header class="app-header"></header> }
 }

@@ -2,12 +2,14 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{File, HtmlElement};
 
+use crate::models::pdf_page_viewport::PdfPageViewport;
 use crate::models::pdf_text_item::PdfTextItem;
 use crate::services::js_bridge::load_pdf_and_extract;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PdfLoadResult {
     pub total_pages: u32,
+    pub pages: Vec<PdfPageViewport>,
     pub items: Vec<PdfTextItem>,
 }
 
@@ -44,6 +46,18 @@ fn read_required_string(value: &JsValue, key: &str) -> Result<String, JsValue> {
         .ok_or_else(|| JsValue::from_str(&format!("Expected '{key}' to be a string.")))
 }
 
+fn read_optional_bool(value: &JsValue, key: &str, fallback: bool) -> Result<bool, JsValue> {
+    let property = get_object_property(value, key)?;
+
+    if property.is_undefined() || property.is_null() {
+        return Ok(fallback);
+    }
+
+    property
+        .as_bool()
+        .ok_or_else(|| JsValue::from_str(&format!("Expected '{key}' to be a boolean.")))
+}
+
 fn read_transform(value: &JsValue) -> Result<Vec<f64>, JsValue> {
     let raw_transform = get_object_property(value, "transform")?;
     let transform = js_sys::Array::from(&raw_transform);
@@ -64,6 +78,7 @@ fn parse_pdf_text_item(value: &JsValue) -> Result<PdfTextItem, JsValue> {
     Ok(PdfTextItem {
         page: read_required_u32(value, "page")?,
         text: read_required_string(value, "text")?,
+        selected: read_optional_bool(value, "selected", true)?,
         left: read_required_f64(value, "left")?,
         top: read_required_f64(value, "top")?,
         width: read_required_f64(value, "width")?,
@@ -72,17 +87,36 @@ fn parse_pdf_text_item(value: &JsValue) -> Result<PdfTextItem, JsValue> {
     })
 }
 
+fn parse_pdf_page_viewport(value: &JsValue) -> Result<PdfPageViewport, JsValue> {
+    Ok(PdfPageViewport {
+        page: read_required_u32(value, "page")?,
+        width: read_required_f64(value, "width")?,
+        height: read_required_f64(value, "height")?,
+    })
+}
+
 fn parse_pdf_load_result(value: JsValue) -> Result<PdfLoadResult, JsValue> {
     let total_pages = read_required_u32(&value, "total_pages")?;
+    let raw_pages = get_object_property(&value, "pages")?;
     let raw_items = get_object_property(&value, "items")?;
+    let pages_array = js_sys::Array::from(&raw_pages);
     let items_array = js_sys::Array::from(&raw_items);
+    let mut pages = Vec::with_capacity(pages_array.length() as usize);
     let mut items = Vec::with_capacity(items_array.length() as usize);
+
+    for raw_page in pages_array.iter() {
+        pages.push(parse_pdf_page_viewport(&raw_page)?);
+    }
 
     for raw_item in items_array.iter() {
         items.push(parse_pdf_text_item(&raw_item)?);
     }
 
-    Ok(PdfLoadResult { total_pages, items })
+    Ok(PdfLoadResult {
+        total_pages,
+        pages,
+        items,
+    })
 }
 
 pub async fn file_to_uint8array(file: File) -> Result<js_sys::Uint8Array, JsValue> {

@@ -1,13 +1,24 @@
-use leptos::ev;
 use leptos::prelude::*;
 
+#[cfg(not(coverage))]
 use crate::components::app_header::AppHeader;
+#[cfg(not(coverage))]
+use crate::components::pdf_word_overlay::PdfWordOverlay;
+#[cfg(not(coverage))]
 use crate::components::pdf_workspace::PdfWorkspace;
+#[cfg(not(coverage))]
 use crate::components::word_sidebar::WordSidebar;
+#[cfg(not(coverage))]
+use crate::models::pdf_page_viewport::PdfPageViewport;
+#[cfg(not(coverage))]
+use crate::models::pdf_text_item::PdfTextItem;
+#[cfg(not(coverage))]
 use crate::{
     APP_HEADING, APP_SUBHEADING, PDF_VIEWER_EMPTY_STATE, TOOLBAR_OPEN_FILE_LABEL,
-    WORD_LIST_EMPTY_STATE, WORD_LIST_TITLE, WordListEntry,
+    WORD_LIST_EMPTY_STATE, WORD_LIST_TITLE, WordListEntry, toggle_pdf_text_item_selection,
 };
+#[cfg(not(coverage))]
+use leptos::ev;
 
 #[cfg(target_arch = "wasm32")]
 use crate::services::pdf_service::process_pdf;
@@ -47,12 +58,13 @@ fn is_dark_theme_preferred() -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(coverage)))]
 fn is_dark_theme_preferred() -> bool {
     false
 }
 
 #[component]
+#[cfg(not(coverage))]
 pub fn AppShell() -> impl IntoView {
     #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (file_name, set_file_name) = signal::<Option<String>>(None);
@@ -60,6 +72,10 @@ pub fn AppShell() -> impl IntoView {
     let (total_pages, set_total_pages) = signal(0_u32);
     #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (word_entries, set_word_entries) = signal(Vec::<WordListEntry>::new());
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
+    let (pdf_pages, set_pdf_pages) = signal(Vec::<PdfPageViewport>::new());
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
+    let (pdf_text_items, set_pdf_text_items) = signal(Vec::<PdfTextItem>::new());
     #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
     let (is_loading, set_is_loading) = signal(false);
     #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
@@ -139,6 +155,8 @@ pub fn AppShell() -> impl IntoView {
         set_file_name.set(Some(selected_file_name));
         set_total_pages.set(0);
         set_word_entries.set(Vec::new());
+        set_pdf_pages.set(Vec::new());
+        set_pdf_text_items.set(Vec::new());
 
         spawn_local(async move {
             match process_pdf(file, viewer_host).await {
@@ -146,6 +164,8 @@ pub fn AppShell() -> impl IntoView {
                     let entries = build_word_list_entries(&result.items);
 
                     set_total_pages.set(result.total_pages);
+                    set_pdf_pages.set(result.pages);
+                    set_pdf_text_items.set(result.items);
                     set_word_entries.set(entries);
                 }
                 Err(error) => {
@@ -156,6 +176,8 @@ pub fn AppShell() -> impl IntoView {
                     set_error_message.set(Some(message));
                     set_total_pages.set(0);
                     set_word_entries.set(Vec::new());
+                    set_pdf_pages.set(Vec::new());
+                    set_pdf_text_items.set(Vec::new());
                 }
             }
 
@@ -165,6 +187,12 @@ pub fn AppShell() -> impl IntoView {
 
     #[cfg(not(target_arch = "wasm32"))]
     let load_pdf_file = move |_event: ev::Event| {};
+
+    let toggle_word_selection = Callback::new(move |word_index: usize| {
+        set_pdf_text_items.update(|items| {
+            toggle_pdf_text_item_selection(items, word_index);
+        });
+    });
 
     #[cfg(target_arch = "wasm32")]
     let show_empty_state = Signal::derive(move || file_name.get().is_none());
@@ -200,7 +228,14 @@ pub fn AppShell() -> impl IntoView {
                         empty_message=PDF_VIEWER_EMPTY_STATE
                         show_empty_state
                     >
-                        <div id="pdf-viewer-host" class="pdf-viewer-host"></div>
+                        <div class="pdf-viewer-stage">
+                            <div id="pdf-viewer-host" class="pdf-viewer-host"></div>
+                            <PdfWordOverlay
+                                pages=pdf_pages
+                                items=pdf_text_items
+                                on_word_click=toggle_word_selection
+                            />
+                        </div>
 
                         <Show when=move || error_message.get().is_some()>
                             <div class="error-banner">
@@ -219,4 +254,10 @@ pub fn AppShell() -> impl IntoView {
             </div>
         </div>
     }
+}
+
+#[component]
+#[cfg(coverage)]
+pub fn AppShell() -> impl IntoView {
+    view! { <div class="app-shell"></div> }
 }

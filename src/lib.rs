@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 
+mod app_shell;
 pub mod components;
 pub mod models;
-mod app_shell;
 
 #[cfg(target_arch = "wasm32")]
 pub mod services;
@@ -43,6 +43,12 @@ pub fn build_word_list_entries(items: &[PdfTextItem]) -> Vec<WordListEntry> {
             })
         })
         .collect()
+}
+
+pub fn toggle_pdf_text_item_selection(items: &mut [PdfTextItem], index: usize) {
+    if let Some(item) = items.get_mut(index) {
+        item.selected = !item.selected;
+    }
 }
 
 pub fn build_document_status(
