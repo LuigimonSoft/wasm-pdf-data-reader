@@ -28,8 +28,12 @@ At this point, the repository includes:
 - Codex documentation in [AGENTS.md](AGENTS.md) and `docs/ai/`
 - working rules that require unit and integration tests to be validated after every modification
 - a basic test suite adjusted to the current crate
+- a top header with file tools
+- a main PDF viewing area rendered through `pdf.js`
+- a right sidebar that lists the words extracted from the PDF
+- rendering without the native `pdf.js` viewer controls
 
-The main PDF loading and rendering workflow is not implemented yet.
+Phases 1 and 2 are implemented. The remaining work is centered on the overlay layer and per-word red highlight boxes.
 
 ## Expected Functional Scope
 
@@ -67,21 +71,21 @@ The application is expected to support the following flow:
 
 ### Phase 1. Viewer Functional Base
 
-- replace the current placeholder UI with an interface that includes a PDF selector
-- connect the browser-side file loading flow
-- validate that the document can be opened from the frontend
+- completed: replaced the placeholder UI with an interface that includes a PDF selector
+- completed: connected the browser-side file loading flow
+- completed: validated the document opening flow from the frontend layer
 
 ### Phase 2. `pdf.js` Integration
 
-- complete the JS bridge for page loading and rendering
-- define the data exchange between `pdf.js` and Rust
-- ensure the rendering remains synchronized with the viewport
+- completed: the JS bridge loads and renders PDF pages
+- completed: data now flows from `pdf.js` into Rust as `PdfTextItem` values
+- completed: the application renders PDF pages inside its own layout without `pdf.js` controls
 
 ### Phase 3. Text Extraction and Model
 
-- define or extend `PdfTextItem` with text, position, and dimensions
-- extract words from `pdf.js`
-- map each word into typed Rust structures
+- refine `PdfTextItem` for stricter per-word geometry handling
+- validate word-level extraction quality and edge cases
+- keep the Rust-side model stable as the source of truth
 
 ### Phase 4. Per-Word Visual Overlay
 
@@ -104,8 +108,7 @@ The application is expected to support the following flow:
 
 ## Immediate Next Steps
 
-1. Implement the UI to load a PDF.
-2. Complete the bridge to `pdf.js`.
-3. Model `PdfTextItem` correctly.
-4. Render a first page with a temporary overlay.
-5. Replace the temporary overlay with real per-word boxes.
+1. Render the transparent red-bordered overlay rectangles over each detected word.
+2. Verify per-word positioning against the PDF viewport on every rendered page.
+3. Expand tests for overlay mapping and rendering behavior.
+4. Maintain the coverage threshold at 80% or higher as the overlay work lands.

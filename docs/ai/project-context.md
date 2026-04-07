@@ -47,13 +47,18 @@ The application must:
 
 - `PdfTextItem` should represent at least the extracted text and the geometry needed to draw the rectangle
 
+## Current Delivery Status
+
+- Phase 1 is implemented: the placeholder UI has been replaced with a layout that includes a header, a main PDF viewing area, and a right-side word list panel.
+- Phase 2 is implemented: `pdf.js` is integrated through the JS bridge and renders PDF pages inside the application without the native `pdf.js` viewer controls.
+- Extracted text is already collected into `PdfTextItem` values and exposed in the sidebar as a word list.
+
 ## Near-Term Implementation Plan
 
-1. Replace the current placeholder UI with a PDF upload and viewer workflow.
-2. Integrate `pdf.js` through the existing JS bindings area.
-3. Define or refine the `PdfTextItem` shape to hold text and word box coordinates.
-4. Render overlay rectangles above the PDF.
-5. Add or update unit and integration tests for the new behavior.
+1. Refine `PdfTextItem` for precise per-word geometry validation.
+2. Render overlay rectangles above the PDF pages.
+3. Synchronize overlay positioning with the rendered viewport on every page.
+4. Expand unit and integration tests for the word overlay behavior.
 
 ## Definition Of Done
 
